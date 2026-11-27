@@ -41,6 +41,9 @@ img, svg { display: block; max-width: 100%; }
 .nav-links { display: flex; align-items: center; gap: 28px; font-size: 14px; color: var(--muted); }
 .nav-links a { text-decoration: none; }
 .nav-links a:hover { color: var(--fg); }
+.nav-links a.gh { display: inline-flex; align-items: center; gap: 7px; }
+.hero-note a, .card p a { color: var(--gold); text-decoration: none; }
+.hero-note a:hover, .card p a:hover { text-decoration: underline; }
 @media (max-width: 760px) { .nav-links a:not(.btn) { display: none; } }
 
 /* ---------- buttons ---------- */
