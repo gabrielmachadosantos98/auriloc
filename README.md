@@ -154,11 +154,8 @@ $body = @{
   follow_streets = $true
   points         = @(@{ lat = -23.5552; lon = -46.6621 }, @{ lat = -23.5713; lon = -46.6449 })
 } | ConvertTo-Json -Depth 3
-Invoke-RestMethod http://127.0.0.1:8765/api/route -Method Post -ContentType "application/json" -Body $body
+Invoke-RestMethod http://localhost:8765/api/route -Method Post -ContentType "application/json" -Body $body
 ```
-
-From scripts, use `127.0.0.1` rather than `localhost`: the server listens on IPv4 only, and
-Windows tries IPv6 (`::1`) first for `localhost`, adding about 2 seconds to each call.
 
 Interactive docs at `http://localhost:8765/docs`.
 

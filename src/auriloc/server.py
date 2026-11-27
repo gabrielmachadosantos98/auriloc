@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import socket
 import webbrowser
 from collections.abc import AsyncIterator, Awaitable
 from contextlib import asynccontextmanager
@@ -118,6 +119,47 @@ def create_app(udid: Optional[str] = None, routing_url: str = DEFAULT_ROUTING_UR
     return app
 
 
+LOOPBACK_HOSTS = ("127.0.0.1", "localhost")
+
+
+class PortUnavailableError(RuntimeError):
+    """The server could not listen on the requested port."""
+
+
+def _bind(family: socket.AddressFamily, address: str, port: int) -> socket.socket:
+    sock = socket.socket(family, socket.SOCK_STREAM)
+    try:
+        if family == socket.AF_INET6:
+            sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+        # No SO_REUSEADDR: on Windows it would let another process take over the port.
+        sock.bind((address, port))
+    except BaseException:
+        sock.close()
+        raise
+    return sock
+
+
+def loopback_sockets(port: int) -> list[socket.socket]:
+    """Listening sockets on both IPv4 and IPv6 loopback.
+
+    Windows resolves `localhost` to ::1 first; with an IPv4-only server every request
+    to `localhost` waited ~2 s for that attempt to fail before falling back to 127.0.0.1.
+    """
+    try:
+        sockets = [_bind(socket.AF_INET, "127.0.0.1", port)]
+    except OSError as e:
+        raise PortUnavailableError(
+            f"Port {port} is not available ({e.strerror or e}). "
+            "Is Auriloc already running? Use --port to pick another one."
+        ) from e
+    if socket.has_ipv6:
+        try:
+            sockets.append(_bind(socket.AF_INET6, "::1", port))
+        except OSError:
+            logger.debug("IPv6 loopback unavailable; listening on IPv4 only", exc_info=True)
+    return sockets
+
+
 async def serve(
     host: str = "127.0.0.1",
     port: int = 8765,
@@ -127,8 +169,13 @@ async def serve(
 ) -> None:
     config = uvicorn.Config(create_app(udid, routing_url), host=host, port=port, log_level="warning")
     server = uvicorn.Server(config)
-    url = f"http://{'localhost' if host in ('127.0.0.1', '0.0.0.0') else host}:{port}"
+    sockets = loopback_sockets(port) if host in LOOPBACK_HOSTS else None
+    url = f"http://{'localhost' if host in (*LOOPBACK_HOSTS, '0.0.0.0') else host}:{port}"
     print(f"Map at {url}  (Ctrl+C to stop and return to real GPS)")
     if open_browser:
         asyncio.get_running_loop().call_later(1.0, webbrowser.open, url)
-    await server.serve()
+    try:
+        await server.serve(sockets=sockets)
+    finally:
+        for sock in sockets or []:
+            sock.close()

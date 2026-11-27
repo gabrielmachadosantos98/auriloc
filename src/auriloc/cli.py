@@ -83,15 +83,19 @@ async def cmd_route(args: argparse.Namespace) -> None:
 
 
 async def cmd_web(args: argparse.Namespace) -> None:
-    from auriloc.server import serve  # import FastAPI/uvicorn only when needed
+    from auriloc.server import PortUnavailableError, serve  # import FastAPI/uvicorn only when needed
 
-    await serve(
-        host=args.host,
-        port=args.port,
-        udid=args.udid,
-        open_browser=not args.no_browser,
-        routing_url=args.routing_url,
-    )
+    try:
+        await serve(
+            host=args.host,
+            port=args.port,
+            udid=args.udid,
+            open_browser=not args.no_browser,
+            routing_url=args.routing_url,
+        )
+    except PortUnavailableError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        raise SystemExit(1) from None
 
 
 def build_parser() -> argparse.ArgumentParser:
