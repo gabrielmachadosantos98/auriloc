@@ -83,6 +83,8 @@ uv sync
 uv run pytest
 ```
 
+The landing page lives in `site/`. See [docs/website.md](docs/website.md) to preview and deploy it.
+
 ## Acceptable use
 
 Auriloc is for development, testing and demos. Using it to fake attendance, check-ins,

@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auriloc · Test location on a real iPhone, no Mac required</title>
+<meta name="description" content="Auriloc lets developers and QA teams on Windows set a location or play a route on a real iPhone over USB, from a map, the command line or an HTTP API.">
+<meta property="og:title" content="Auriloc · Test location on a real iPhone, no Mac required">
+<meta property="og:description" content="Set a location or play a route on a real iPhone from Windows. Map, CLI and HTTP API.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0b0f17">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="container">
+    <a class="brand" href="#top" aria-label="Auriloc home">
+      <img src="favicon.svg" alt="" width="28" height="28">
+      Auriloc
+    </a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary btn-sm" href="#waitlist">Join the waitlist</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="container">
+      <div>
+        <span class="eyebrow"><span class="pulse"></span>Early access · Windows · iOS 17.4+</span>
+        <h1>Test location on a <span class="accent">real iPhone</span>. No Mac required.</h1>
+        <p class="lead">
+          Auriloc lets developers and QA teams on Windows set a location or play a route on a
+          physical iPhone over USB. Click a map, draw a route, or script it from your tests.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
+          <a class="btn" href="#how">See how it works</a>
+        </div>
+        <p class="hero-note">No jailbreak. No admin rights. Open-source core.</p>
+      </div>
+
+      <svg class="hero-visual" viewBox="0 0 660 400" role="img"
+           aria-label="The Auriloc map on a computer moves a dot along a route, and a connected iPhone shows the same simulated location">
+        <defs>
+          <clipPath id="winClip"><rect x="0" y="0" width="440" height="300" rx="14"/></clipPath>
+          <clipPath id="phoneClip"><rect x="498" y="38" width="134" height="284" rx="20"/></clipPath>
+          <path id="route" d="M60,240 L60,160 L190,160 L190,90 L320,90 L400,30"/>
+          <g id="map">
+            <rect width="440" height="270" fill="#141d2e"/>
+            <rect x="210" y="172" width="92" height="70" rx="6" fill="#15302a"/>
+            <path d="M330,270 C360,230 420,226 440,200 L440,270 Z" fill="#132a44"/>
+            <g stroke="#1f2b41" stroke-width="6" stroke-linecap="round">
+              <path d="M60,0 V270 M120,0 V270 M250,0 V170 M320,0 V270 M380,0 V200"/>
+              <path d="M0,30 H440 M0,90 H440 M0,220 H200"/>
+              <path d="M320,90 L440,0"/>
+            </g>
+            <g stroke="#28385a" stroke-width="12" stroke-linecap="round">
+              <path d="M0,160 H440 M190,0 V270"/>
+            </g>
+          </g>
+        </defs>
+
+        <!-- computer window -->
+        <g clip-path="url(#winClip)">
+          <rect width="440" height="300" fill="#121a27"/>
+          <g transform="translate(0,30)">
+            <use href="#map"/>
+            <use href="#route" fill="none" stroke="#f2b544" stroke-width="4" stroke-dasharray="8 8" stroke-linecap="round"/>
+            <circle r="16" fill="#3b8bff" opacity=".22">
+              <animateMotion dur="10s" repeatCount="indefinite"><mpath href="#route"/></animateMotion>
+            </circle>
+            <circle r="7.5" fill="#3b8bff" stroke="#fff" stroke-width="3">
+              <animateMotion dur="10s" repeatCount="indefinite"><mpath href="#route"/></animateMotion>
+            </circle>
+          </g>
+          <rect width="440" height="30" fill="#0f1520"/>
+          <circle cx="18" cy="15" r="5" fill="#2a3448"/>
+          <circle cx="34" cy="15" r="5" fill="#2a3448"/>
+          <circle cx="50" cy="15" r="5" fill="#2a3448"/>
+          <rect x="150" y="8" width="140" height="14" rx="7" fill="#172133"/>
+          <text x="220" y="18.5" text-anchor="middle" fill="#97a3b6" font-size="9" font-family="JetBrains Mono, monospace">localhost:8765</text>
+          <g>
+            <rect x="14" y="44" width="152" height="66" rx="9" fill="#0b0f17" opacity=".94" stroke="#223049"/>
+            <text x="26" y="63" fill="#e8edf4" font-size="11.5" font-weight="700">Auriloc</text>
+            <circle cx="30" cy="78" r="3" fill="#22c55e"/>
+            <text x="38" y="81.5" fill="#97a3b6" font-size="9.5">iPhone · iOS 27</text>
+            <text x="26" y="99" fill="#f2b544" font-size="9.5" font-weight="600">Route · 40 km/h</text>
+          </g>
+        </g>
+        <rect width="440" height="300" rx="14" fill="none" stroke="#223049"/>
+
+        <!-- cable -->
+        <path d="M440,262 C474,262 470,374 522,374 C552,374 565,362 565,338" fill="none" stroke="#2c3a54" stroke-width="5" stroke-linecap="round"/>
+        <rect x="557" y="328" width="16" height="10" rx="2" fill="#2c3a54"/>
+
+        <!-- iPhone -->
+        <rect x="490" y="30" width="150" height="300" rx="28" fill="#0b0f17" stroke="#34445f" stroke-width="3"/>
+        <g clip-path="url(#phoneClip)">
+          <rect x="498" y="38" width="134" height="284" fill="#0f1520"/>
+          <text x="512" y="57" fill="#e8edf4" font-size="9" font-weight="700">9:41</text>
+          <rect x="543" y="45" width="44" height="13" rx="6.5" fill="#000"/>
+          <g transform="translate(498,70) scale(0.3045)">
+            <use href="#map"/>
+            <use href="#route" fill="none" stroke="#f2b544" stroke-width="10" stroke-dasharray="20 20" stroke-linecap="round" opacity=".7"/>
+            <circle r="30" fill="#3b8bff" stroke="#fff" stroke-width="10">
+              <animateMotion dur="10s" repeatCount="indefinite"><mpath href="#route"/></animateMotion>
+            </circle>
+          </g>
+          <rect x="506" y="164" width="118" height="70" rx="11" fill="#121a27" stroke="#223049"/>
+          <text x="516" y="182" fill="#97a3b6" font-size="8.5">Simulated location</text>
+          <text x="516" y="199" fill="#f2b544" font-size="11" font-weight="700">Moving · 40 km/h</text>
+          <text x="516" y="220" fill="#cfd8e6" font-size="8" font-family="JetBrains Mono, monospace">-23.5631, -46.6542</text>
+          <rect x="506" y="242" width="118" height="64" rx="11" fill="#121a27" stroke="#223049"/>
+          <text x="516" y="261" fill="#e8edf4" font-size="9.5" font-weight="700">Your app</text>
+          <text x="516" y="276" fill="#97a3b6" font-size="8.5">Courier 2 min away</text>
+          <rect x="516" y="287" width="98" height="5" rx="2.5" fill="#223049"/>
+          <rect x="516" y="287" width="0" height="5" rx="2.5" fill="#3b8bff">
+            <animate attributeName="width" values="0;98" dur="10s" repeatCount="indefinite"/>
+          </rect>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ================= PROBLEM ================= -->
+  <section class="alt problem">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">The problem</span>
+        <h2>Location testing on iPhone is slow and hard to repeat</h2>
+        <p>If your app depends on where the user is, every test means a Mac, a simulator that
+          isn't a real device, or a walk around the block.</p>
+      </div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 19h20"/></svg></div>
+          <h3>Xcode needs a Mac</h3>
+          <p>Teams building with React Native or Flutter on Windows have no native way to move a real iPhone.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></div>
+          <h3>Manual trips don't repeat</h3>
+          <p>Walking or driving to reproduce a geofence bug costs hours and never follows the same path twice.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></div>
+          <h3>Spoofing apps aren't test tools</h3>
+          <p>Consumer location changers are built for games. No API, no scripting, nothing your CI can run.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FEATURES ================= -->
+  <section id="features">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">Features</span>
+        <h2>Everything you need to test location, on the device your users have</h2>
+      </div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></div>
+          <h3>Fixed location</h3>
+          <p>Click anywhere on the map or paste coordinates. The iPhone is there instantly.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h7"/></svg></div>
+          <h3>Routes at real speed</h3>
+          <p>Draw a path, pick walking, cycling or driving speed, and watch the device move one update per second.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14l2 2 4-4"/></svg></div>
+          <h3>GPX playback</h3>
+          <p>Replay recorded tracks at their original pace to reproduce real trips exactly.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg></div>
+          <h3>CLI and HTTP API</h3>
+          <p>Everything on the map is scriptable. Drive the device from Appium, Maestro or any test runner.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>No jailbreak, no admin</h3>
+          <p>Uses Apple's developer interface over USB. Runs as a normal Windows user.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-6 6 6 6"/><path d="M16 6l6 6-6 6"/></svg></div>
+          <h3>Open-source core</h3>
+          <p>The agent is GPL-3.0. Inspect it, extend it, run it in your own pipeline.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HOW IT WORKS ================= -->
+  <section id="how" class="alt">
+    <div class="container how">
+      <div>
+        <span class="kicker">How it works</span>
+        <h2>From cable to moving iPhone in three steps</h2>
+        <ol class="steps">
+          <li><span class="num">1</span><div><h3>Plug in your iPhone</h3><p>Trust the computer and turn on Developer Mode. Auriloc walks you through it.</p></div></li>
+          <li><span class="num">2</span><div><h3>Start Auriloc</h3><p>The map opens in your browser and connects to the device automatically.</p></div></li>
+          <li><span class="num">3</span><div><h3>Click, draw or script</h3><p>Set a point, play a route, or call the API from your tests. Stop, and the iPhone returns to real GPS.</p></div></li>
+        </ol>
+      </div>
+      <div class="code">
+        <div class="code-bar"><span></span><span></span><span></span><em>terminal</em></div>
+<pre><span class="c"># Pin the iPhone to a location</span>
+<span class="k">auriloc</span> set -23.5505 -46.6333
+
+<span class="c"># Replay a recorded trip</span>
+<span class="k">auriloc</span> route delivery-run.gpx
+
+<span class="c"># Drive a route at 40 km/h from your test suite</span>
+<span class="k">curl</span> -X POST localhost:8765/api/route \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"speed_kmh": 40, "points": [
+        {"lat": -23.5552, "lon": -46.6621},
+        {"lat": -23.5713, "lon": -46.6449}]}'</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= USE CASES ================= -->
+  <section>
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">Built for</span>
+        <h2>Teams whose app moves with the user</h2>
+        <p>If your product reacts to location, Auriloc lets you test it without leaving your desk.</p>
+      </div>
+      <div class="chips">
+        <span class="chip"><b>Delivery</b> · courier tracking</span>
+        <span class="chip"><b>Mobility</b> · ride and trip flows</span>
+        <span class="chip"><b>Logistics</b> · fleet and route apps</span>
+        <span class="chip"><b>Fitness</b> · runs and rides</span>
+        <span class="chip"><b>Geofencing</b> · enter and exit events</span>
+        <span class="chip"><b>Retail</b> · store finders and offers</span>
+        <span class="chip"><b>Sales demos</b> · show any city, live</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WAITLIST ================= -->
+  <section id="waitlist" class="alt">
+    <div class="container waitlist">
+      <div>
+        <span class="kicker">Early access</span>
+        <h2>Get Auriloc before everyone else</h2>
+        <p style="color:var(--muted);font-size:17px;margin:0">
+          We're onboarding a small group of developers and QA teams. Tell us how you test location
+          today and we'll get you set up.
+        </p>
+        <ul class="perks">
+          <li>Early builds of the Windows app</li>
+          <li>A direct line to shape the roadmap</li>
+          <li>Founding-member pricing on Pro</li>
+        </ul>
+      </div>
+      <div>
+        <div class="form-card" id="formCard">
+          <div class="form-placeholder" id="formPlaceholder">
+            <div><strong>The waitlist opens soon</strong>Check back in a few days.</div>
+          </div>
+        </div>
+        <p class="form-legal">We only use your answers to contact you about early access and to improve
+          Auriloc. See our <a href="privacy.html">privacy notice</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section id="faq">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">FAQ</span>
+        <h2>Questions</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Do I need a Mac or a jailbroken iPhone?</summary>
+          <p>No. Auriloc runs on Windows and uses Apple's developer interface over USB. You only need
+            to turn on Developer Mode on the iPhone, which is a standard setting.</p>
+        </details>
+        <details>
+          <summary>Which iPhones and iOS versions are supported?</summary>
+          <p>Any iPhone running iOS 17.4 or later.</p>
+        </details>
+        <details>
+          <summary>Does it work on macOS, Linux or Android?</summary>
+          <p>Windows comes first. macOS and Linux are on the roadmap, and Android support is being
+            considered. Tell us what you need in the waitlist form.</p>
+        </details>
+        <details>
+          <summary>Can apps tell the location is simulated?</summary>
+          <p>Yes. Since iOS 15, apps can detect simulated locations, and Auriloc doesn't try to hide
+            it. That's fine for testing your own app, and it's why Auriloc isn't meant for
+            fooling other apps.</p>
+        </details>
+        <details>
+          <summary>Is it legal?</summary>
+          <p>Simulating the location of your own device for development, testing and demos is a
+            standard practice. Using it to deceive people or services, like faking check-ins or
+            attendance, is prohibited. See the <a href="acceptable-use.html">acceptable use policy</a>.</p>
+        </details>
+        <details>
+          <summary>How much will it cost?</summary>
+          <p>The core agent is free and open source. A Pro plan for teams, with shared scenarios
+            and CI integrations, is planned. Waitlist members get founding-member pricing.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <span>© 2026 Auriloc</span>
+    <nav>
+      <a href="privacy.html">Privacy</a>
+      <a href="acceptable-use.html">Acceptable use</a>
+    </nav>
+    <p class="disclaimer">Auriloc is not affiliated with or endorsed by Apple Inc. iPhone and Xcode are trademarks of Apple Inc.</p>
+  </div>
+</footer>
+
+<script>
+  // Waitlist form (Tally). Paste the form ID from your share link, e.g. https://tally.so/r/wMd8xE -> 'wMd8xE'.
+  const TALLY_FORM_ID = '2jPvWD';
+
+  (function loadWaitlist() {
+    if (!TALLY_FORM_ID) return;
+    const card = document.getElementById('formCard');
+    const src = `https://tally.so/embed/${TALLY_FORM_ID}?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1`;
+    const iframe = document.createElement('iframe');
+    iframe.dataset.tallySrc = src;
+    iframe.loading = 'lazy';
+    iframe.height = '420';
+    iframe.title = 'Join the Auriloc waitlist';
+    card.replaceChildren(iframe);
+
+    const script = document.createElement('script');
+    script.src = 'https://tally.so/widgets/embed.js';
+    script.onload = () => window.Tally ? window.Tally.loadEmbeds() : (iframe.src = src);
+    script.onerror = () => { iframe.src = src; };
+    document.body.appendChild(script);
+  })();
+</script>
+</body>
+</html>
