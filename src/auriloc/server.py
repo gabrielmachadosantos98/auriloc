@@ -18,6 +18,7 @@ from auriloc.controller import Controller, describe_error
 from auriloc.device import DeviceNotReadyError
 from auriloc.motion import TravelMode
 from auriloc.routing import DEFAULT_ROUTING_URL, RoutingError, StreetRouter
+from auriloc.security import LocalOnlyMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,13 @@ async def _guard(call: Awaitable[Any], controller: Controller) -> dict[str, Any]
     return controller.status()
 
 
-def create_app(udid: Optional[str] = None, routing_url: str = DEFAULT_ROUTING_URL) -> FastAPI:
+def create_app(
+    udid: Optional[str] = None,
+    routing_url: str = DEFAULT_ROUTING_URL,
+    local_only: bool = True,
+) -> FastAPI:
+    """`local_only` accepts only requests addressed to localhost (see `auriloc.security`).
+    Turn it off only when the server is deliberately exposed to the network."""
     controller = Controller(udid, router=StreetRouter(routing_url))
 
     @asynccontextmanager
@@ -80,6 +87,8 @@ def create_app(udid: Optional[str] = None, routing_url: str = DEFAULT_ROUTING_UR
             await controller.shutdown()
 
     app = FastAPI(title="Auriloc", lifespan=lifespan)
+    if local_only:
+        app.add_middleware(LocalOnlyMiddleware)
 
     @app.get("/", include_in_schema=False)
     async def index() -> FileResponse:
@@ -167,10 +176,19 @@ async def serve(
     open_browser: bool = True,
     routing_url: str = DEFAULT_ROUTING_URL,
 ) -> None:
-    config = uvicorn.Config(create_app(udid, routing_url), host=host, port=port, log_level="warning")
+    local = host in LOOPBACK_HOSTS
+    config = uvicorn.Config(
+        create_app(udid, routing_url, local_only=local), host=host, port=port, log_level="warning"
+    )
     server = uvicorn.Server(config)
-    sockets = loopback_sockets(port) if host in LOOPBACK_HOSTS else None
+    sockets = loopback_sockets(port) if local else None
     url = f"http://{'localhost' if host in (*LOOPBACK_HOSTS, '0.0.0.0') else host}:{port}"
+    if not local:
+        print(
+            f"WARNING: listening on {host}. The API has no password: anyone who can reach this\n"
+            "computer on the network can control the iPhone, and the protection against\n"
+            "malicious websites (localhost-only requests) is off. Use only on a trusted network."
+        )
     print(f"Map at {url}  (Ctrl+C to stop and return to real GPS)")
     if open_browser:
         asyncio.get_running_loop().call_later(1.0, webbrowser.open, url)

@@ -173,6 +173,20 @@ auriloc web --routing-url http://localhost:5000/route/v1/driving
 Nothing else leaves your computer. Fixed points, straight-line routes and GPX playback work
 offline (the map tiles still load from OpenStreetMap).
 
+## Security
+
+The map and the HTTP API have no password, so Auriloc limits who can reach them:
+
+- By default the server listens only on this computer (`127.0.0.1` and `::1`).
+- It only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]`, which blocks
+  malicious websites from reaching it through your browser (DNS rebinding).
+- Commands (`POST`) sent by other websites are rejected. Scripts and test runners, which send
+  no `Origin` header, work normally.
+
+`auriloc web --host 0.0.0.0` exposes the API to your whole network and turns these checks
+off: anyone who can reach your computer can control the iPhone. Use it only on a trusted
+network.
+
 ## Troubleshooting
 
 | Problem | What to do |
