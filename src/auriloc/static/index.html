@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>iPhone GPS</title>
+<title>Auriloc</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   :root {
@@ -90,44 +90,44 @@
 
 <aside class="panel">
   <div>
-    <h1>iPhone GPS</h1>
-    <div class="device"><span id="dot" class="dot"></span><span id="deviceText">Conectando…</span></div>
+    <h1>Auriloc</h1>
+    <div class="device"><span id="dot" class="dot"></span><span id="deviceText">Connecting…</span></div>
   </div>
 
   <div class="tabs" role="tablist">
-    <button id="tabPoint" class="active" role="tab">Ponto fixo</button>
-    <button id="tabRoute" role="tab">Rota</button>
+    <button id="tabPoint" class="active" role="tab">Fixed point</button>
+    <button id="tabRoute" role="tab">Route</button>
   </div>
 
   <section id="pointPane" style="display:flex;flex-direction:column;gap:10px">
-    <p class="hint">Clique no mapa para teletransportar o iPhone para lá.</p>
+    <p class="hint">Click the map to teleport the iPhone there.</p>
     <form id="coordForm" class="row">
       <input id="coordInput" type="text" placeholder="-23.5505, -46.6333" autocomplete="off">
-      <button class="btn" type="submit">Ir</button>
+      <button class="btn" type="submit">Go</button>
     </form>
   </section>
 
   <section id="routePane" class="hidden" style="display:flex;flex-direction:column;gap:10px">
-    <p class="hint">Clique no mapa para adicionar pontos à rota, na ordem do trajeto.</p>
+    <p class="hint">Click the map to add route points, in travel order.</p>
     <div class="row">
-      <button id="undoBtn" class="btn grow">Desfazer ponto</button>
-      <button id="resetBtn" class="btn grow">Limpar rota</button>
+      <button id="undoBtn" class="btn grow">Undo point</button>
+      <button id="resetBtn" class="btn grow">Clear route</button>
     </div>
-    <label class="small" for="speedInput">Velocidade (km/h)</label>
+    <label class="small" for="speedInput">Speed (km/h)</label>
     <div class="chips" id="speedChips">
-      <button class="chip" data-speed="5">Caminhando 5</button>
-      <button class="chip" data-speed="10">Correndo 10</button>
-      <button class="chip" data-speed="18">Bicicleta 18</button>
-      <button class="chip" data-speed="40">Carro 40</button>
+      <button class="chip" data-speed="5">Walking 5</button>
+      <button class="chip" data-speed="10">Running 10</button>
+      <button class="chip" data-speed="18">Cycling 18</button>
+      <button class="chip" data-speed="40">Driving 40</button>
     </div>
     <input id="speedInput" type="number" min="1" max="300" step="1" value="5">
     <div class="stats">
-      <div class="stat"><b id="distStat">0 m</b><span>distância</span></div>
-      <div class="stat"><b id="timeStat">0 s</b><span>tempo estimado</span></div>
+      <div class="stat"><b id="distStat">0 m</b><span>distance</span></div>
+      <div class="stat"><b id="timeStat">0 s</b><span>estimated time</span></div>
     </div>
     <div class="row">
-      <button id="playBtn" class="btn primary grow" disabled>Iniciar rota</button>
-      <button id="stopBtn" class="btn grow" disabled>Parar</button>
+      <button id="playBtn" class="btn primary grow" disabled>Start route</button>
+      <button id="stopBtn" class="btn grow" disabled>Stop</button>
     </div>
     <div id="progressWrap" class="hidden" style="display:flex;flex-direction:column;gap:4px">
       <div class="progress"><div id="progressBar"></div></div>
@@ -138,11 +138,11 @@
   <section class="now">
     <div class="row">
       <span class="grow">
-        <label class="small">Localização simulada</label><br>
-        <span id="currentText" class="coords" title="Centralizar no mapa">Nenhuma (GPS real)</span>
+        <label class="small">Simulated location</label><br>
+        <span id="currentText" class="coords" title="Center on map">None (real GPS)</span>
       </span>
     </div>
-    <button id="clearBtn" class="btn danger">Voltar ao GPS real</button>
+    <button id="clearBtn" class="btn danger">Back to real GPS</button>
   </section>
 </aside>
 
@@ -152,7 +152,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 
-// ---------- mapa ----------
+// ---------- map ----------
 const map = L.map('map', { zoomControl: false }).setView([-23.5505, -46.6333], 14);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -168,14 +168,14 @@ const currentMarker = L.circleMarker([0, 0], {
   radius: 9, color: '#fff', weight: 3, fillColor: accent, fillOpacity: 1,
 });
 
-// ---------- estado ----------
+// ---------- state ----------
 let mode = 'point';
 let waypoints = [];
 let status = null;
 let busy = false;
 let centeredOnce = false;
 
-// ---------- utilidades ----------
+// ---------- utilities ----------
 let toastTimer;
 function toast(msg, isError = false) {
   const el = $('toast');
@@ -198,7 +198,7 @@ async function api(path, body) {
   };
   const res = await fetch(path, opts);
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(formatDetail(data.detail) || `Erro ${res.status}`);
+  if (!res.ok) throw new Error(formatDetail(data.detail) || `Error ${res.status}`);
   return data;
 }
 
@@ -231,7 +231,7 @@ function lengthOf(points) {
 }
 const speed = () => Number($('speedInput').value);
 
-// ---------- interação ----------
+// ---------- interaction ----------
 function setMode(m) {
   mode = m;
   $('tabPoint').classList.toggle('active', m === 'point');
@@ -246,7 +246,7 @@ $('tabRoute').onclick = () => setMode('route');
 map.on('click', (e) => {
   const p = [e.latlng.lat, e.latlng.lng];
   if (mode === 'point') {
-    command('/api/location', { lat: p[0], lon: p[1] }, `iPhone em ${fmtCoord(p)}`);
+    command('/api/location', { lat: p[0], lon: p[1] }, `iPhone at ${fmtCoord(p)}`);
   } else {
     waypoints.push(p);
     renderDraft();
@@ -256,10 +256,10 @@ map.on('click', (e) => {
 $('coordForm').onsubmit = (e) => {
   e.preventDefault();
   const m = $('coordInput').value.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
-  if (!m) { toast('Use o formato "latitude, longitude", ex.: -23.5505, -46.6333', true); return; }
+  if (!m) { toast('Use the "latitude, longitude" format, e.g. -23.5505, -46.6333', true); return; }
   const p = [Number(m[1]), Number(m[2])];
   map.setView(p, Math.max(map.getZoom(), 16));
-  command('/api/location', { lat: p[0], lon: p[1] }, `iPhone em ${fmtCoord(p)}`);
+  command('/api/location', { lat: p[0], lon: p[1] }, `iPhone at ${fmtCoord(p)}`);
 };
 
 $('undoBtn').onclick = () => { waypoints.pop(); renderDraft(); };
@@ -275,13 +275,13 @@ $('speedInput').oninput = renderDraft;
 
 $('playBtn').onclick = () => {
   if (waypoints.length < 2 || !(speed() > 0)) return;
-  command('/api/route', { points: waypoints.map(([lat, lon]) => ({ lat, lon })), speed_kmh: speed() }, 'Rota iniciada');
+  command('/api/route', { points: waypoints.map(([lat, lon]) => ({ lat, lon })), speed_kmh: speed() }, 'Route started');
 };
-$('stopBtn').onclick = () => command('/api/stop', {}, 'Rota parada; iPhone mantido no ponto atual');
-$('clearBtn').onclick = () => command('/api/clear', {}, 'iPhone de volta ao GPS real');
+$('stopBtn').onclick = () => command('/api/stop', {}, 'Route stopped; iPhone held at the current point');
+$('clearBtn').onclick = () => command('/api/clear', {}, 'iPhone back on real GPS');
 $('currentText').onclick = () => { if (status?.current) map.setView(status.current, Math.max(map.getZoom(), 16)); };
 
-// ---------- renderização ----------
+// ---------- rendering ----------
 function renderDraft() {
   draftLine.setLatLngs(waypoints);
   draftDots.clearLayers();
@@ -303,32 +303,32 @@ function render() {
   const dot = $('dot');
   if (!s) {
     dot.className = 'dot warn';
-    $('deviceText').textContent = 'Servidor sem resposta';
+    $('deviceText').textContent = 'Server not responding';
   } else if (s.connected && s.device) {
     dot.className = 'dot ok';
     $('deviceText').textContent = `${s.device.name ?? 'iPhone'} · iOS ${s.device.ios_version}`;
   } else if (s.connecting) {
     dot.className = 'dot warn';
-    $('deviceText').textContent = 'Conectando ao iPhone…';
+    $('deviceText').textContent = 'Connecting to the iPhone…';
   } else {
     dot.className = 'dot err';
-    $('deviceText').textContent = s.error || 'iPhone desconectado';
+    $('deviceText').textContent = s.error || 'iPhone disconnected';
   }
 
   const running = s?.mode === 'route';
   $('playBtn').disabled = busy || waypoints.length < 2 || !(speed() > 0);
   $('stopBtn').disabled = busy || !running;
   $('clearBtn').disabled = busy;
-  $('playBtn').textContent = running ? 'Reiniciar rota' : 'Iniciar rota';
+  $('playBtn').textContent = running ? 'Restart route' : 'Start route';
 
   if (s?.current) {
     currentMarker.setLatLng(s.current);
     if (!map.hasLayer(currentMarker)) currentMarker.addTo(map);
-    $('currentText').textContent = fmtCoord(s.current) + (running ? '  (em movimento)' : '');
+    $('currentText').textContent = fmtCoord(s.current) + (running ? '  (moving)' : '');
     if (!centeredOnce) { map.setView(s.current, 16); centeredOnce = true; }
   } else {
     if (map.hasLayer(currentMarker)) currentMarker.remove();
-    $('currentText').textContent = 'Nenhuma (GPS real)';
+    $('currentText').textContent = 'None (real GPS)';
   }
 
   activeLine.setLatLngs(running && s.route ? s.route : []);
@@ -338,7 +338,7 @@ function render() {
     const { done, total } = s.progress;
     $('progressBar').style.width = `${(100 * done) / total}%`;
     const left = (total - done) * s.interval_s;
-    $('progressText').textContent = `${done} de ${total} pontos · faltam ${fmtTime(left)}`;
+    $('progressText').textContent = `${done} of ${total} points · ${fmtTime(left)} left`;
   }
 }
 

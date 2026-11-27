@@ -1,4 +1,4 @@
-"""Descoberta do iPhone conectado e checagem de pré-requisitos."""
+"""Discovery of the connected iPhone and prerequisite checks."""
 
 from dataclasses import dataclass
 from typing import Optional
@@ -16,16 +16,16 @@ class DeviceInfo:
 
 
 class DeviceNotReadyError(RuntimeError):
-    """O aparelho existe, mas falta algum pré-requisito (ex.: Modo de Desenvolvedor)."""
+    """The device is there, but a prerequisite is missing (e.g. Developer Mode)."""
 
 
 async def list_usb_udids() -> list[str]:
-    """UDIDs dos aparelhos conectados por cabo USB."""
+    """UDIDs of the devices connected by USB cable."""
     return [device.serial for device in await list_devices() if device.is_usb]
 
 
 async def get_device_info(udid: Optional[str] = None) -> DeviceInfo:
-    """Lê nome, versão do iOS e status do Modo de Desenvolvedor via lockdown (USB)."""
+    """Read name, iOS version and Developer Mode status over lockdown (USB)."""
     lockdown = await create_using_usbmux(serial=udid)
     try:
         info = lockdown.short_info
@@ -40,18 +40,16 @@ async def get_device_info(udid: Optional[str] = None) -> DeviceInfo:
 
 
 async def ensure_ready(udid: Optional[str] = None) -> DeviceInfo:
-    """Garante que o aparelho pode receber localização simulada; senão explica o que fazer."""
+    """Make sure the device can receive a simulated location; otherwise explain what to do."""
     info = await get_device_info(udid)
     major = int(info.ios_version.split(".")[0])
     if major < 17:
-        raise DeviceNotReadyError(
-            f"iOS {info.ios_version} não é suportado por esta ferramenta (precisa de iOS 17.4 ou superior)."
-        )
+        raise DeviceNotReadyError(f"iOS {info.ios_version} is not supported (iOS 17.4 or later is required).")
     if not info.developer_mode:
         raise DeviceNotReadyError(
-            "O Modo de Desenvolvedor está desligado. No iPhone, vá em "
-            "Ajustes > Privacidade e Segurança > Modo de Desenvolvedor, ligue, "
-            "reinicie quando pedir e confirme após desbloquear.\n"
-            "Se a opção não aparecer, rode: iphone-gps reveal"
+            "Developer Mode is off. On the iPhone, open "
+            "Settings > Privacy & Security > Developer Mode, turn it on, "
+            "restart when asked and confirm after unlocking.\n"
+            "If the option is missing, run: auriloc reveal"
         )
     return info

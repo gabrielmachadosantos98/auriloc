@@ -1,19 +1,19 @@
 import pytest
 
-from acess_iphone.routes import haversine_m, interpolate_route, route_length_m
+from auriloc.routes import haversine_m, interpolate_route, route_length_m
 
-# Av. Paulista: Consolação -> Paraíso (~2,5 km em linha reta)
+# Avenida Paulista, Sao Paulo: Consolacao -> Paraiso (~2.5 km in a straight line)
 CONSOLACAO = (-23.5552, -46.6621)
 PARAISO = (-23.5713, -46.6449)
 
 
 def test_haversine_known_distance():
-    # 1 grau de latitude ~ 111,2 km
+    # 1 degree of latitude ~ 111.2 km
     assert haversine_m((0.0, 0.0), (1.0, 0.0)) == pytest.approx(111_195, rel=1e-3)
 
 
 def test_points_are_evenly_spaced_at_speed():
-    speed_kmh, interval_s = 36.0, 1.0  # 10 m por passo
+    speed_kmh, interval_s = 36.0, 1.0  # 10 m per step
     points = interpolate_route([CONSOLACAO, PARAISO], speed_kmh, interval_s)
     steps = [haversine_m(a, b) for a, b in zip(points, points[1:])]
     assert all(s == pytest.approx(10.0, abs=0.05) for s in steps[:-1])
@@ -34,7 +34,7 @@ def test_point_count_matches_duration():
 
 
 def test_step_carries_over_between_segments():
-    # Três waypoints colineares: o espaçamento não pode "reiniciar" no meio da rota.
+    # Three collinear waypoints: spacing must not "restart" in the middle of the route.
     middle = ((CONSOLACAO[0] + PARAISO[0]) / 2, (CONSOLACAO[1] + PARAISO[1]) / 2)
     one = interpolate_route([CONSOLACAO, PARAISO], 36.0)
     two = interpolate_route([CONSOLACAO, middle, PARAISO], 36.0)

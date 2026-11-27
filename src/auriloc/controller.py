@@ -1,7 +1,8 @@
-"""Estado da simulação para o servidor web.
+"""Simulation state behind the web server.
 
-Mantém uma única `LocationSession` aberta (o túnel userspace é um por processo), reconecta
-sozinho se o iPhone for desconectado e reconectado, e reproduz rotas em segundo plano.
+Keeps a single `LocationSession` open (the userspace tunnel is one per process),
+reconnects on its own if the iPhone is unplugged and plugged back in, and plays
+routes in the background.
 """
 
 import asyncio
@@ -11,9 +12,9 @@ from contextlib import suppress
 from dataclasses import asdict
 from typing import Any, Literal, Optional, TypeVar
 
-from acess_iphone.device import DeviceInfo, DeviceNotReadyError, ensure_ready
-from acess_iphone.location import LocationSession, validate_coordinates
-from acess_iphone.routes import LatLon, interpolate_route, route_length_m
+from auriloc.device import DeviceInfo, DeviceNotReadyError, ensure_ready
+from auriloc.location import LocationSession, validate_coordinates
+from auriloc.routes import LatLon, interpolate_route, route_length_m
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +44,10 @@ class Controller:
         self._route_stop: Optional[asyncio.Event] = None
         self._connect_task: Optional[asyncio.Task[None]] = None
 
-    # ---- ciclo de vida ----------------------------------------------------------------
+    # ---- lifecycle --------------------------------------------------------------------
 
     async def start(self) -> None:
-        """Conecta em segundo plano, para o servidor subir mesmo sem iPhone conectado."""
+        """Connect in the background, so the server starts even with no iPhone plugged in."""
         self._connect_task = asyncio.create_task(self._initial_connect())
 
     async def _initial_connect(self) -> None:
@@ -55,7 +56,7 @@ class Controller:
                 await self._connect()
         except Exception as e:
             self.error = describe_error(e)
-            logger.warning("não foi possível conectar ao iPhone: %s", self.error)
+            logger.warning("could not connect to the iPhone: %s", self.error)
 
     async def shutdown(self) -> None:
         if self._connect_task is not None and not self._connect_task.done():
@@ -69,7 +70,7 @@ class Controller:
                     await self._session.clear()
             await self._disconnect()
 
-    # ---- conexão ----------------------------------------------------------------------
+    # ---- connection -------------------------------------------------------------------
 
     async def _connect(self) -> LocationSession:
         if self._session is not None:
@@ -92,7 +93,7 @@ class Controller:
                 await session.__aexit__(None, None, None)
 
     async def _with_session(self, action: Callable[[LocationSession], Awaitable[T]]) -> T:
-        """Executa `action` na sessão; se a conexão caiu, reconecta e tenta mais uma vez."""
+        """Run `action` on the session; if the connection dropped, reconnect and retry once."""
         async with self._lock:
             try:
                 result = await action(await self._connect())
@@ -100,7 +101,7 @@ class Controller:
                 self.error = str(e)
                 raise
             except Exception:
-                logger.warning("conexão com o iPhone falhou; reconectando", exc_info=True)
+                logger.warning("connection to the iPhone failed; reconnecting", exc_info=True)
                 await self._disconnect()
                 try:
                     result = await action(await self._connect())
@@ -114,7 +115,7 @@ class Controller:
         await self._with_session(lambda s: s.set(lat, lon))
         self.current = (lat, lon)
 
-    # ---- comandos ---------------------------------------------------------------------
+    # ---- commands ---------------------------------------------------------------------
 
     async def set_point(self, lat: float, lon: float) -> None:
         validate_coordinates(lat, lon)
@@ -127,7 +128,7 @@ class Controller:
             validate_coordinates(lat, lon)
         points = interpolate_route(waypoints, speed_kmh, self.interval_s)
         await self._cancel_route()
-        await self._send(*points[0])  # falha logo se o iPhone não estiver disponível
+        await self._send(*points[0])  # fail fast if the iPhone is unavailable
         self.mode, self.route, self.speed_kmh = "route", list(waypoints), speed_kmh
         self.progress = (1, len(points))
         stop = asyncio.Event()
@@ -135,18 +136,18 @@ class Controller:
         self._route_task = asyncio.create_task(self._play(points, stop))
 
     async def stop_route(self) -> None:
-        """Para a rota e mantém o iPhone no ponto em que ela parou."""
+        """Stop the route and keep the iPhone where it stopped."""
         await self._cancel_route()
         if self.mode == "route":
             self.mode = "fixed"
 
     async def clear(self) -> None:
-        """Volta ao GPS real. Conecta se preciso, para também limpar simulações antigas."""
+        """Go back to real GPS. Connects if needed, so it also clears leftover simulations."""
         await self._cancel_route()
         await self._with_session(lambda s: s.clear())
         self.mode, self.current, self.route, self.progress, self.speed_kmh = "idle", None, None, None, None
 
-    # ---- reprodução de rota -----------------------------------------------------------
+    # ---- route playback ---------------------------------------------------------------
 
     async def _play(self, points: list[LatLon], stop: asyncio.Event) -> None:
         loop = asyncio.get_running_loop()
@@ -154,17 +155,17 @@ class Controller:
         try:
             for i, point in enumerate(points[1:], start=1):
                 delay = max(0.0, started + i * self.interval_s - loop.time())
-                # Espera pelo evento em vez de cancelar a task: assim um envio ao iPhone
-                # nunca é interrompido no meio.
+                # Wait on the event instead of cancelling the task, so a send to the
+                # iPhone is never interrupted halfway.
                 with suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), timeout=delay)
                     return
                 await self._send(*point)
                 self.progress = (i + 1, len(points))
-            self.mode = "fixed"  # rota concluída: segura o último ponto
+            self.mode = "fixed"  # route finished: hold the last point
         except Exception as e:
-            logger.exception("rota interrompida por erro")
-            self.error = f"Rota interrompida: {describe_error(e)}"
+            logger.exception("route interrupted by an error")
+            self.error = f"Route interrupted: {describe_error(e)}"
             self.mode = "fixed" if self.current else "idle"
 
     async def _cancel_route(self) -> None:
@@ -175,7 +176,7 @@ class Controller:
             stop.set()
             await task
 
-    # ---- estado -----------------------------------------------------------------------
+    # ---- state ------------------------------------------------------------------------
 
     def status(self) -> dict[str, Any]:
         return {

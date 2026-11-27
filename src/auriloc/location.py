@@ -1,8 +1,8 @@
-"""Sessão de simulação de localização (iOS 17.4+).
+"""Location simulation session (iOS 17.4+).
 
-Sobe um túnel RSD em userspace (sem admin, sem `tunneld`), abre o canal DVT de
-instrumentação e expõe set/clear/play_gpx. A localização simulada depende da
-sessão aberta: mantenha o `async with` vivo enquanto quiser a posição falsa.
+Brings up an RSD tunnel in userspace (no admin rights, no `tunneld`), opens the DVT
+instruments channel and exposes set/clear/play_gpx. The simulated location lasts as
+long as the session is open: keep the `async with` alive while you need it.
 """
 
 from contextlib import AsyncExitStack
@@ -17,17 +17,17 @@ from pymobiledevice3.services.dvt.instruments.location_simulation import Locatio
 
 def validate_coordinates(latitude: float, longitude: float) -> None:
     if not -90.0 <= latitude <= 90.0:
-        raise ValueError(f"Latitude fora do intervalo [-90, 90]: {latitude}")
+        raise ValueError(f"Latitude out of range [-90, 90]: {latitude}")
     if not -180.0 <= longitude <= 180.0:
-        raise ValueError(f"Longitude fora do intervalo [-180, 180]: {longitude}")
+        raise ValueError(f"Longitude out of range [-180, 180]: {longitude}")
 
 
 class LocationSession:
-    """Uso:
+    """Usage:
 
         async with LocationSession() as session:
             await session.set(-23.5505, -46.6333)
-            ...  # a localização vale enquanto o bloco estiver aberto
+            ...  # the location holds while the block is open
     """
 
     def __init__(self, udid: Optional[str] = None) -> None:
@@ -60,7 +60,7 @@ class LocationSession:
     @property
     def _sim(self) -> LocationSimulation:
         if self._simulation is None:
-            raise RuntimeError("Sessão não está aberta; use `async with LocationSession()`.")
+            raise RuntimeError("Session is not open; use `async with LocationSession()`.")
         return self._simulation
 
     async def set(self, latitude: float, longitude: float) -> None:
@@ -71,5 +71,5 @@ class LocationSession:
         await self._sim.clear()
 
     async def play_gpx(self, path: Path, *, no_wait: bool = False, jitter_ms: int = 0) -> None:
-        """Reproduz a rota de um GPX no ritmo dos timestamps (ou de uma vez com no_wait)."""
+        """Replay a GPX track at the pace of its timestamps (or all at once with no_wait)."""
         await self._sim.play_gpx_file(str(path), disable_sleep=no_wait, timing_randomness_range=jitter_ms)

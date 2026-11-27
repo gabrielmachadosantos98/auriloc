@@ -1,17 +1,32 @@
 [project]
-name = "acess-iphone"
+name = "auriloc"
 version = "0.1.0"
-description = "Simula a localização de um iPhone conectado via USB (Windows, iOS 17.4+)."
+description = "Simulate the location of a real iPhone over USB, no Mac required (iOS 17.4+)."
 readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
+keywords = ["ios", "iphone", "location", "gps", "simulation", "testing", "qa"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+]
 dependencies = [
     "fastapi>=0.165.0",
     "pymobiledevice3>=11.65.0",
     "uvicorn>=0.54.0",
 ]
 
+[project.urls]
+Repository = "https://github.com/gabrielmachadosantos98/auriloc"
+
 [project.scripts]
-iphone-gps = "acess_iphone.cli:main"
+auriloc = "auriloc.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.11.14,<0.12"]

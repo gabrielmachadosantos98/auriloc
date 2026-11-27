@@ -1,4 +1,4 @@
-"""Transforma waypoints desenhados no mapa em pontos espaçados no tempo, a uma velocidade constante."""
+"""Turn waypoints drawn on the map into points evenly spaced in time, at a constant speed."""
 
 import math
 from collections.abc import Sequence
@@ -9,7 +9,7 @@ EARTH_RADIUS_M = 6_371_000.0
 
 
 def haversine_m(a: LatLon, b: LatLon) -> float:
-    """Distância em metros entre dois pontos (lat, lon) em graus."""
+    """Distance in meters between two (lat, lon) points in degrees."""
     lat1, lon1, lat2, lon2 = map(math.radians, (*a, *b))
     h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
     return 2 * EARTH_RADIUS_M * math.asin(math.sqrt(h))
@@ -20,26 +20,26 @@ def route_length_m(waypoints: Sequence[LatLon]) -> float:
 
 
 def _lerp(a: LatLon, b: LatLon, f: float) -> LatLon:
-    # Interpolação linear em graus: erro desprezível para trechos de algumas centenas de metros.
+    # Linear interpolation in degrees: negligible error for segments of a few hundred meters.
     return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
 
 
 def interpolate_route(waypoints: Sequence[LatLon], speed_kmh: float, interval_s: float = 1.0) -> list[LatLon]:
-    """Pontos ao longo da rota, um a cada `interval_s` segundos, andando a `speed_kmh`.
+    """Points along the route, one every `interval_s` seconds, moving at `speed_kmh`.
 
-    O primeiro ponto é o início da rota e o último é sempre o waypoint final, mesmo que o
-    último passo seja mais curto que os outros.
+    The first point is the start of the route and the last one is always the final
+    waypoint, even if that last step is shorter than the others.
     """
     if len(waypoints) < 2:
-        raise ValueError("A rota precisa de pelo menos 2 pontos.")
+        raise ValueError("A route needs at least 2 points.")
     if speed_kmh <= 0:
-        raise ValueError("A velocidade precisa ser maior que zero.")
+        raise ValueError("Speed must be greater than zero.")
     if interval_s <= 0:
-        raise ValueError("O intervalo precisa ser maior que zero.")
+        raise ValueError("Interval must be greater than zero.")
 
     step_m = speed_kmh / 3.6 * interval_s
     points: list[LatLon] = [tuple(waypoints[0])]  # type: ignore[list-item]
-    remaining = step_m  # quanto falta andar até emitir o próximo ponto
+    remaining = step_m  # distance left to travel before emitting the next point
     for a, b in zip(waypoints, waypoints[1:]):
         segment = haversine_m(a, b)
         travelled = 0.0
