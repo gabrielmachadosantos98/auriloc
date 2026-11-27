@@ -59,10 +59,16 @@
   button.btn:disabled { opacity: .45; cursor: default; }
   .grow { flex: 1; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { border: 1px solid var(--border); background: var(--bg); color: var(--fg); border-radius: 999px;
-    padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer; }
-  .chip.active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .mode { border: 1px solid var(--border); background: var(--bg); color: var(--fg); border-radius: 10px;
+    padding: 6px 2px; font: inherit; font-size: 12px; cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; gap: 2px; }
+  .mode .ico { font-size: 18px; line-height: 1; }
+  .mode.active { border-color: var(--accent); color: var(--accent); font-weight: 600; box-shadow: inset 0 0 0 1px var(--accent); }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+  .check input { width: 16px; height: 16px; accent-color: var(--accent); }
+  .plan-state { font-size: 12px; color: var(--muted); min-height: 16px; }
+  .plan-state.error { color: var(--danger); }
   label.small { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
 
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -83,6 +89,26 @@
   .toast.show { opacity: 1; }
   .toast.error { background: var(--danger); color: #fff; }
   .hidden { display: none !important; }
+
+  /* Sprite that travels the route on the map, one per travel mode. */
+  .rider-icon { background: none; border: 0; }
+  .rider { position: relative; width: 44px; height: 44px; }
+  .rider-badge { width: 44px; height: 44px; border-radius: 50%; background: var(--bg); border: 3px solid var(--accent);
+    box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; }
+  .rider-emoji { display: inline-block; font-size: 24px; line-height: 1; transition: transform .25s;
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif; }
+  .rider.east .rider-emoji { transform: scaleX(-1); } /* sprites face left; mirror when heading east */
+  .rider-speed { position: absolute; top: 47px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+    background: var(--fg); color: var(--bg); font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+    font-variant-numeric: tabular-nums; }
+  .rider:not(.moving) .rider-speed { display: none; }
+  .rider.moving .rider-badge { animation: bob var(--bob-time, .5s) ease-in-out infinite; }
+  .rider.walking { --bob-time: .6s; --bob-y: -3px; }
+  .rider.running { --bob-time: .32s; --bob-y: -4px; }
+  .rider.cycling { --bob-time: .4s; --bob-y: -1.5px; }
+  .rider.driving { --bob-time: .2s; --bob-y: -1px; }
+  @keyframes bob { 50% { transform: translateY(var(--bob-y, -2px)); } }
+  @media (prefers-reduced-motion: reduce) { .rider.moving .rider-badge { animation: none; } }
 </style>
 </head>
 <body>
@@ -113,14 +139,18 @@
       <button id="undoBtn" class="btn grow">Undo point</button>
       <button id="resetBtn" class="btn grow">Clear route</button>
     </div>
-    <label class="small" for="speedInput">Speed (km/h)</label>
-    <div class="chips" id="speedChips">
-      <button class="chip" data-speed="5">Walking 5</button>
-      <button class="chip" data-speed="10">Running 10</button>
-      <button class="chip" data-speed="18">Cycling 18</button>
-      <button class="chip" data-speed="40">Driving 40</button>
+    <label class="small">Travel mode</label>
+    <div class="modes" id="modeButtons">
+      <button class="mode" data-mode="walking" data-speed="5" title="Walking, 5 km/h"><span class="ico">🚶</span>Walk</button>
+      <button class="mode" data-mode="running" data-speed="10" title="Running, 10 km/h"><span class="ico">🏃</span>Run</button>
+      <button class="mode" data-mode="cycling" data-speed="18" title="Cycling, 18 km/h"><span class="ico">🚴</span>Bike</button>
+      <button class="mode" data-mode="driving" data-speed="40" title="Driving, 40 km/h"><span class="ico">🚗</span>Car</button>
     </div>
+    <label class="check"><input id="streetsInput" type="checkbox" checked> Follow real streets</label>
+    <label class="small" for="speedInput">Cruise speed (km/h)</label>
     <input id="speedInput" type="number" min="1" max="300" step="1" value="5">
+    <p class="hint">Starts from rest, slows down for turns and stops at the end, like a real trip.</p>
+    <div id="planState" class="plan-state"></div>
     <div class="stats">
       <div class="stat"><b id="distStat">0 m</b><span>distance</span></div>
       <div class="stat"><b id="timeStat">0 s</b><span>estimated time</span></div>
@@ -132,6 +162,7 @@
     <div id="progressWrap" class="hidden" style="display:flex;flex-direction:column;gap:4px">
       <div class="progress"><div id="progressBar"></div></div>
       <span id="progressText" class="hint"></span>
+      <label class="check"><input id="followInput" type="checkbox" checked> Follow on map</label>
     </div>
   </section>
 
@@ -161,7 +192,8 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2563eb';
-const draftLine = L.polyline([], { color: accent, weight: 4, dashArray: '6 8', opacity: .8 }).addTo(map);
+const draftLine = L.polyline([], { color: accent, weight: 3, dashArray: '6 8', opacity: .6 }).addTo(map);
+const plannedLine = L.polyline([], { color: accent, weight: 5, opacity: .9 }).addTo(map);
 const draftDots = L.layerGroup().addTo(map);
 const activeLine = L.polyline([], { color: accent, weight: 5, opacity: .35 }).addTo(map);
 const currentMarker = L.circleMarker([0, 0], {
@@ -171,9 +203,87 @@ const currentMarker = L.circleMarker([0, 0], {
 // ---------- state ----------
 let mode = 'point';
 let waypoints = [];
+let travelMode = 'walking';
+let plan = null; // server preview of the current draft: { path, length_m, duration_s }
+let planSeq = 0;
+let planTimer;
 let status = null;
 let busy = false;
 let centeredOnce = false;
+
+// ---------- travelling sprite ----------
+const SPRITES = { walking: '🚶', running: '🏃', cycling: '🚴', driving: '🚗' };
+let rider = null; // { marker, mode, shown, from, to, t0, dur, done, east, animating }
+let follow = true;
+
+function riderIcon(m) {
+  return L.divIcon({
+    className: 'rider-icon', iconSize: [44, 44], iconAnchor: [22, 22],
+    html: `<div class="rider ${m}"><div class="rider-badge"><span class="rider-emoji">${SPRITES[m]}</span></div>`
+      + `<div class="rider-speed"></div></div>`,
+  });
+}
+
+// Map center that puts `latlng` in the middle of the part of the map the panel doesn't cover.
+function followCenter(latlng) {
+  const r = document.querySelector('.panel').getBoundingClientRect();
+  const shift = window.innerWidth <= 600 ? L.point(0, r.height / 2) : L.point(-r.right / 2, 0);
+  const z = map.getZoom();
+  return map.unproject(map.project(latlng, z).add(shift), z);
+}
+
+// Glide between the 1-per-second positions so the sprite walks instead of jumping.
+function animateRider(now) {
+  if (!rider) return;
+  const f = rider.dur > 0 ? Math.min(1, (now - rider.t0) / rider.dur) : 1;
+  rider.shown = [rider.from[0] + (rider.to[0] - rider.from[0]) * f, rider.from[1] + (rider.to[1] - rider.from[1]) * f];
+  rider.marker.setLatLng(rider.shown);
+  if (follow && status?.mode === 'route') map.panTo(followCenter(rider.shown), { animate: false });
+  if (f < 1) requestAnimationFrame(animateRider);
+  else rider.animating = false;
+}
+
+function updateRider(s) {
+  const show = !!(s?.current && s.travel_mode && SPRITES[s.travel_mode] && s.mode !== 'idle');
+  if (!show) {
+    if (rider) { rider.marker.remove(); rider = null; }
+    return false;
+  }
+  const target = s.current;
+  const done = s.progress?.done ?? null;
+  if (!rider || rider.mode !== s.travel_mode) {
+    rider?.marker.remove();
+    rider = {
+      marker: L.marker(target, { icon: riderIcon(s.travel_mode), interactive: false, keyboard: false, zIndexOffset: 1000 }).addTo(map),
+      mode: s.travel_mode, shown: target, from: target, to: target, t0: 0, dur: 0, done, east: false, speed: 0, animating: false,
+    };
+    if (follow && s.mode === 'route') {
+      map.setZoom(Math.max(map.getZoom(), 17), { animate: false });
+      map.panTo(followCenter(target), { animate: false });
+    }
+  } else if (target[0] !== rider.to[0] || target[1] !== rider.to[1]) {
+    // How many route steps passed since the last position we saw (usually 1).
+    const steps = done != null && rider.done != null && done > rider.done ? done - rider.done : 1;
+    const dt = steps * (s.interval_s || 1);
+    rider.speed = (L.latLng(rider.to).distanceTo(L.latLng(target)) / dt) * 3.6;
+    if (Math.abs(target[1] - rider.to[1]) > 1e-7) rider.east = target[1] > rider.to[1];
+    rider.from = rider.shown;
+    rider.to = target;
+    rider.t0 = performance.now();
+    rider.dur = Math.min(dt, 2) * 1000;
+    if (!rider.animating) { rider.animating = true; requestAnimationFrame(animateRider); }
+  }
+  rider.done = done;
+
+  const el = rider.marker.getElement()?.querySelector('.rider');
+  if (el) {
+    const moving = s.mode === 'route' && rider.speed >= 0.5;
+    el.classList.toggle('moving', moving);
+    el.classList.toggle('east', rider.east);
+    el.querySelector('.rider-speed').textContent = `${Math.round(rider.speed)} km/h`;
+  }
+  return true;
+}
 
 // ---------- utilities ----------
 let toastTimer;
@@ -265,20 +375,65 @@ $('coordForm').onsubmit = (e) => {
 $('undoBtn').onclick = () => { waypoints.pop(); renderDraft(); };
 $('resetBtn').onclick = () => { waypoints = []; renderDraft(); };
 
-$('speedChips').onclick = (e) => {
-  const chip = e.target.closest('.chip');
-  if (!chip) return;
-  $('speedInput').value = chip.dataset.speed;
+$('modeButtons').onclick = (e) => {
+  const btn = e.target.closest('.mode');
+  if (!btn) return;
+  travelMode = btn.dataset.mode;
+  $('speedInput').value = btn.dataset.speed;
   renderDraft();
 };
 $('speedInput').oninput = renderDraft;
+$('streetsInput').onchange = renderDraft;
+
+const routeBody = () => ({
+  points: waypoints.map(([lat, lon]) => ({ lat, lon })),
+  speed_kmh: speed(),
+  travel_mode: travelMode,
+  follow_streets: $('streetsInput').checked,
+});
+
+// Ask the server how the route will really go (along streets, with turns and stops).
+function schedulePlan() {
+  clearTimeout(planTimer);
+  plan = null;
+  const seq = ++planSeq;
+  if (waypoints.length < 2 || !(speed() > 0)) { setPlanState(''); return; }
+  setPlanState($('streetsInput').checked ? 'Finding the way along the streets…' : 'Planning…');
+  planTimer = setTimeout(async () => {
+    try {
+      const result = await api('/api/route/plan', routeBody());
+      if (seq !== planSeq) return; // a newer draft replaced this one
+      plan = result;
+      setPlanState('');
+    } catch (e) {
+      if (seq !== planSeq) return;
+      setPlanState(e.message, true);
+    }
+    renderPlan();
+  }, 350);
+}
+function setPlanState(text, isError = false) {
+  $('planState').textContent = text;
+  $('planState').className = 'plan-state' + (isError ? ' error' : '');
+}
 
 $('playBtn').onclick = () => {
   if (waypoints.length < 2 || !(speed() > 0)) return;
-  command('/api/route', { points: waypoints.map(([lat, lon]) => ({ lat, lon })), speed_kmh: speed() }, 'Route started');
+  const label = { walking: 'Walking', running: 'Running', cycling: 'Cycling', driving: 'Driving' }[travelMode];
+  follow = true;
+  $('followInput').checked = true;
+  command('/api/route', routeBody(), `${label} route started`);
 };
 $('stopBtn').onclick = () => command('/api/stop', {}, 'Route stopped; iPhone held at the current point');
 $('clearBtn').onclick = () => command('/api/clear', {}, 'iPhone back on real GPS');
+$('followInput').onchange = () => {
+  follow = $('followInput').checked;
+  if (follow && rider) map.panTo(followCenter(rider.shown));
+};
+// Dragging the map while following means the user wants to look elsewhere.
+map.on('dragstart', () => {
+  if (follow && status?.mode === 'route') { follow = false; $('followInput').checked = false; }
+});
 $('currentText').onclick = () => { if (status?.current) map.setView(status.current, Math.max(map.getZoom(), 16)); };
 
 // ---------- rendering ----------
@@ -291,10 +446,18 @@ function renderDraft() {
       fillColor: i === 0 ? accent : '#fff', fillOpacity: 1,
     }).addTo(draftDots);
   });
-  const d = lengthOf(waypoints);
-  $('distStat').textContent = fmtDist(d);
-  $('timeStat').textContent = speed() > 0 ? fmtTime(d / (speed() / 3.6)) : '—';
-  [...$('speedChips').children].forEach((c) => c.classList.toggle('active', Number(c.dataset.speed) === speed()));
+  [...$('modeButtons').children].forEach((b) => b.classList.toggle('active', b.dataset.mode === travelMode));
+  schedulePlan();
+  renderPlan();
+}
+
+function renderPlan() {
+  plannedLine.setLatLngs(plan ? plan.path : []);
+  const d = plan ? plan.length_m : lengthOf(waypoints);
+  const approx = !plan && waypoints.length >= 2;
+  $('distStat').textContent = (approx ? '~' : '') + fmtDist(d);
+  $('timeStat').textContent = plan ? fmtTime(plan.duration_s)
+    : speed() > 0 ? (approx ? '~' : '') + fmtTime(d / (speed() / 3.6)) : '—';
   render();
 }
 
@@ -321,9 +484,11 @@ function render() {
   $('clearBtn').disabled = busy;
   $('playBtn').textContent = running ? 'Restart route' : 'Start route';
 
+  const riderShown = updateRider(s);
   if (s?.current) {
     currentMarker.setLatLng(s.current);
-    if (!map.hasLayer(currentMarker)) currentMarker.addTo(map);
+    if (riderShown) currentMarker.remove();
+    else if (!map.hasLayer(currentMarker)) currentMarker.addTo(map);
     $('currentText').textContent = fmtCoord(s.current) + (running ? '  (moving)' : '');
     if (!centeredOnce) { map.setView(s.current, 16); centeredOnce = true; }
   } else {
@@ -349,7 +514,8 @@ async function poll() {
     status = null;
   }
   if (!busy) render();
-  setTimeout(poll, 1000);
+  // Poll faster during a route so the sprite sees every 1-second step.
+  setTimeout(poll, status?.mode === 'route' ? 400 : 1000);
 }
 
 renderDraft();

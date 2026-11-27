@@ -21,6 +21,7 @@ from pymobiledevice3.services.amfi import AmfiService
 
 from auriloc.device import DeviceNotReadyError, ensure_ready, get_device_info, list_usb_udids
 from auriloc.location import LocationSession, validate_coordinates
+from auriloc.routing import DEFAULT_ROUTING_URL
 
 
 async def _wait_forever() -> None:
@@ -84,7 +85,13 @@ async def cmd_route(args: argparse.Namespace) -> None:
 async def cmd_web(args: argparse.Namespace) -> None:
     from auriloc.server import serve  # import FastAPI/uvicorn only when needed
 
-    await serve(host=args.host, port=args.port, udid=args.udid, open_browser=not args.no_browser)
+    await serve(
+        host=args.host,
+        port=args.port,
+        udid=args.udid,
+        open_browser=not args.no_browser,
+        routing_url=args.routing_url,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -113,6 +120,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_web.add_argument("--port", type=int, default=8765)
     p_web.add_argument("--host", default="127.0.0.1", help="server address (default: this computer only)")
     p_web.add_argument("--no-browser", action="store_true", help="do not open the browser automatically")
+    p_web.add_argument(
+        "--routing-url",
+        default=DEFAULT_ROUTING_URL,
+        help="OSRM server used to follow streets; {profile} becomes car, bike or foot (default: %(default)s)",
+    )
     p_web.set_defaults(func=cmd_web)
     return parser
 
