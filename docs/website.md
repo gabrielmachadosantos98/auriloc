@@ -10,31 +10,31 @@ uv run python -m http.server 8080 -d site
 
 Then open http://localhost:8080.
 
-## Before publishing
+## Live site
 
-1. **Waitlist form:** create the form on [Tally](https://tally.so) and paste its ID into
-   `TALLY_FORM_ID` near the end of `site/index.html`. The ID is the last part of the share
-   link: `https://tally.so/r/wMd8xE` -> `wMd8xE`. Suggested questions:
-   - Email (required)
-   - Your role: mobile developer / QA / product / other
-   - What kind of app do you work on? (delivery, mobility, fitness, ...)
-   - How do you test location on iPhone today?
-   - Do you use Windows, macOS or both?
-2. **Contact email:** replace `CONTACT_EMAIL` in `site/privacy.html` with the address that
-   answers privacy requests.
+https://auriloc.gabrielmachadosantos98.workers.dev/
 
-## Deploy to Cloudflare Pages
+Deployed on Cloudflare (Workers static assets) from the `site/` folder of this repository.
+Every push to `main` redeploys it. Only `site/` is public; the rest of the repository is not
+served.
 
-1. In the Cloudflare dashboard, go to **Workers & Pages** > **Create** > **Pages** >
-   **Connect to Git**, and authorize access to the `auriloc` repository.
-2. Build settings:
-   - Framework preset: **None**
-   - Build command: *(leave empty)*
-   - Build output directory: **`site`**
-3. Deploy. The site is published at `https://<project>.pages.dev` and redeploys on every
-   push to `main`.
-4. In the Pages project, open **Metrics** and enable **Web Analytics** (cookie-free, no
-   banner needed).
-5. Optional: add a custom domain under **Custom domains**.
+## Configuration
 
-`site/_headers` sets basic security headers on Cloudflare Pages.
+- **Waitlist form:** [Tally](https://tally.so) form `2jPvWD`, set in `TALLY_FORM_ID` near the
+  end of `site/index.html`. The ID is the last part of the share link
+  (`https://tally.so/r/2jPvWD`).
+- **Privacy contact:** the email in `site/privacy.html` ("Your rights").
+- **Analytics:** Cloudflare Web Analytics, installed manually with the beacon script at the
+  end of each page (`index.html`, `privacy.html`, `acceptable-use.html`). It is cookie-free,
+  so no consent banner is needed. The token is public by design. Add the same script to any
+  new page. Dashboard: Cloudflare > **Analytics & Logs** > **Web Analytics**.
+- **Security headers:** `site/_headers`.
+
+Cloudflare serves `/privacy.html` at `/privacy` (it redirects the `.html` URL), which is
+expected.
+
+## Deploying elsewhere
+
+The site is static, so any host works. On Cloudflare Pages, use no build command and `site`
+as the output directory; there you can enable Web Analytics from the project's **Metrics**
+tab instead of the manual script.
