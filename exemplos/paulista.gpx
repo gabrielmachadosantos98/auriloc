@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="acess-iphone" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Avenida Paulista (Consolação → Paraíso)</name>
+    <trkseg>
+      <trkpt lat="-23.555200" lon="-46.662100"><time>2026-01-01T12:00:00Z</time></trkpt>
+      <trkpt lat="-23.555871" lon="-46.661383"><time>2026-01-01T12:00:05Z</time></trkpt>
+      <trkpt lat="-23.556542" lon="-46.660667"><time>2026-01-01T12:00:10Z</time></trkpt>
+      <trkpt lat="-23.557212" lon="-46.659950"><time>2026-01-01T12:00:15Z</time></trkpt>
+      <trkpt lat="-23.557883" lon="-46.659233"><time>2026-01-01T12:00:20Z</time></trkpt>
+      <trkpt lat="-23.558554" lon="-46.658517"><time>2026-01-01T12:00:25Z</time></trkpt>
+      <trkpt lat="-23.559225" lon="-46.657800"><time>2026-01-01T12:00:30Z</time></trkpt>
+      <trkpt lat="-23.559896" lon="-46.657083"><time>2026-01-01T12:00:35Z</time></trkpt>
+      <trkpt lat="-23.560567" lon="-46.656367"><time>2026-01-01T12:00:40Z</time></trkpt>
+      <trkpt lat="-23.561238" lon="-46.655650"><time>2026-01-01T12:00:45Z</time></trkpt>
+      <trkpt lat="-23.561908" lon="-46.654933"><time>2026-01-01T12:00:50Z</time></trkpt>
+      <trkpt lat="-23.562579" lon="-46.654217"><time>2026-01-01T12:00:55Z</time></trkpt>
+      <trkpt lat="-23.563250" lon="-46.653500"><time>2026-01-01T12:01:00Z</time></trkpt>
+      <trkpt lat="-23.563921" lon="-46.652783"><time>2026-01-01T12:01:05Z</time></trkpt>
+      <trkpt lat="-23.564592" lon="-46.652067"><time>2026-01-01T12:01:10Z</time></trkpt>
+      <trkpt lat="-23.565262" lon="-46.651350"><time>2026-01-01T12:01:15Z</time></trkpt>
+      <trkpt lat="-23.565933" lon="-46.650633"><time>2026-01-01T12:01:20Z</time></trkpt>
+      <trkpt lat="-23.566604" lon="-46.649917"><time>2026-01-01T12:01:25Z</time></trkpt>
+      <trkpt lat="-23.567275" lon="-46.649200"><time>2026-01-01T12:01:30Z</time></trkpt>
+      <trkpt lat="-23.567946" lon="-46.648483"><time>2026-01-01T12:01:35Z</time></trkpt>
+      <trkpt lat="-23.568617" lon="-46.647767"><time>2026-01-01T12:01:40Z</time></trkpt>
+      <trkpt lat="-23.569288" lon="-46.647050"><time>2026-01-01T12:01:45Z</time></trkpt>
+      <trkpt lat="-23.569958" lon="-46.646333"><time>2026-01-01T12:01:50Z</time></trkpt>
+      <trkpt lat="-23.570629" lon="-46.645617"><time>2026-01-01T12:01:55Z</time></trkpt>
+      <trkpt lat="-23.571300" lon="-46.644900"><time>2026-01-01T12:02:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

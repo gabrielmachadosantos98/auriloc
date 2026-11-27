@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPhone GPS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #656d76;
+    --border: #d8dee4;
+    --soft: #f3f5f7;
+    --accent: #2563eb;
+    --accent-fg: #ffffff;
+    --danger: #c2410c;
+    --ok: #16a34a;
+    --warn: #ca8a04;
+    --shadow: 0 6px 24px rgba(0, 0, 0, .14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1f24; --fg: #e6e8eb; --muted: #9aa3ad; --border: #343a42;
+      --soft: #262a30; --accent: #4f8cff; --danger: #fb923c; --shadow: 0 6px 24px rgba(0, 0, 0, .5);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #map { position: fixed; inset: 0; }
+  .leaflet-container { cursor: crosshair; }
+
+  .panel { position: fixed; top: 16px; left: 16px; z-index: 1000; width: 340px; max-height: calc(100% - 32px);
+    overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  @media (max-width: 600px) {
+    .panel { top: auto; bottom: 0; left: 0; width: 100%; max-height: 55%; border-radius: 14px 14px 0 0; }
+  }
+  h1 { font-size: 16px; margin: 0; }
+  .device { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.err { background: var(--danger); }
+
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--soft); border-radius: 10px; padding: 3px; }
+  .tabs button { border: 0; background: transparent; color: var(--muted); padding: 7px; border-radius: 8px;
+    font: inherit; font-weight: 600; cursor: pointer; }
+  .tabs button.active { background: var(--bg); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+  .hint { color: var(--muted); font-size: 13px; margin: 0; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  input[type=text], input[type=number] { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }
+  button.btn { border: 1px solid var(--border); background: var(--soft); color: var(--fg); padding: 8px 12px;
+    border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  button.btn:hover:not(:disabled) { filter: brightness(.96); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+  button.btn.danger { color: var(--danger); }
+  button.btn:disabled { opacity: .45; cursor: default; }
+  .grow { flex: 1; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--border); background: var(--bg); color: var(--fg); border-radius: 999px;
+    padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+  .chip.active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  label.small { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--soft); border-radius: 8px; padding: 8px 10px; }
+  .stat b { display: block; font-size: 15px; }
+  .stat span { color: var(--muted); font-size: 12px; }
+
+  .progress { height: 6px; background: var(--soft); border-radius: 3px; overflow: hidden; }
+  .progress > div { height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+
+  .now { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .coords { font-variant-numeric: tabular-nums; font-size: 13px; cursor: pointer; }
+  .coords:hover { color: var(--accent); }
+
+  .toast { position: fixed; z-index: 1100; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(560px, calc(100% - 32px));
+    background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 10px; box-shadow: var(--shadow);
+    font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; white-space: pre-line; }
+  .toast.show { opacity: 1; }
+  .toast.error { background: var(--danger); color: #fff; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<aside class="panel">
+  <div>
+    <h1>iPhone GPS</h1>
+    <div class="device"><span id="dot" class="dot"></span><span id="deviceText">Conectando…</span></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button id="tabPoint" class="active" role="tab">Ponto fixo</button>
+    <button id="tabRoute" role="tab">Rota</button>
+  </div>
+
+  <section id="pointPane" style="display:flex;flex-direction:column;gap:10px">
+    <p class="hint">Clique no mapa para teletransportar o iPhone para lá.</p>
+    <form id="coordForm" class="row">
+      <input id="coordInput" type="text" placeholder="-23.5505, -46.6333" autocomplete="off">
+      <button class="btn" type="submit">Ir</button>
+    </form>
+  </section>
+
+  <section id="routePane" class="hidden" style="display:flex;flex-direction:column;gap:10px">
+    <p class="hint">Clique no mapa para adicionar pontos à rota, na ordem do trajeto.</p>
+    <div class="row">
+      <button id="undoBtn" class="btn grow">Desfazer ponto</button>
+      <button id="resetBtn" class="btn grow">Limpar rota</button>
+    </div>
+    <label class="small" for="speedInput">Velocidade (km/h)</label>
+    <div class="chips" id="speedChips">
+      <button class="chip" data-speed="5">Caminhando 5</button>
+      <button class="chip" data-speed="10">Correndo 10</button>
+      <button class="chip" data-speed="18">Bicicleta 18</button>
+      <button class="chip" data-speed="40">Carro 40</button>
+    </div>
+    <input id="speedInput" type="number" min="1" max="300" step="1" value="5">
+    <div class="stats">
+      <div class="stat"><b id="distStat">0 m</b><span>distância</span></div>
+      <div class="stat"><b id="timeStat">0 s</b><span>tempo estimado</span></div>
+    </div>
+    <div class="row">
+      <button id="playBtn" class="btn primary grow" disabled>Iniciar rota</button>
+      <button id="stopBtn" class="btn grow" disabled>Parar</button>
+    </div>
+    <div id="progressWrap" class="hidden" style="display:flex;flex-direction:column;gap:4px">
+      <div class="progress"><div id="progressBar"></div></div>
+      <span id="progressText" class="hint"></span>
+    </div>
+  </section>
+
+  <section class="now">
+    <div class="row">
+      <span class="grow">
+        <label class="small">Localização simulada</label><br>
+        <span id="currentText" class="coords" title="Centralizar no mapa">Nenhuma (GPS real)</span>
+      </span>
+    </div>
+    <button id="clearBtn" class="btn danger">Voltar ao GPS real</button>
+  </section>
+</aside>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+
+// ---------- mapa ----------
+const map = L.map('map', { zoomControl: false }).setView([-23.5505, -46.6333], 14);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+}).addTo(map);
+
+const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2563eb';
+const draftLine = L.polyline([], { color: accent, weight: 4, dashArray: '6 8', opacity: .8 }).addTo(map);
+const draftDots = L.layerGroup().addTo(map);
+const activeLine = L.polyline([], { color: accent, weight: 5, opacity: .35 }).addTo(map);
+const currentMarker = L.circleMarker([0, 0], {
+  radius: 9, color: '#fff', weight: 3, fillColor: accent, fillOpacity: 1,
+});
+
+// ---------- estado ----------
+let mode = 'point';
+let waypoints = [];
+let status = null;
+let busy = false;
+let centeredOnce = false;
+
+// ---------- utilidades ----------
+let toastTimer;
+function toast(msg, isError = false) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (el.className = 'toast'), isError ? 7000 : 2500);
+}
+
+function formatDetail(detail) {
+  if (!detail) return '';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) return detail.map((d) => d.msg).join('\n');
+  return JSON.stringify(detail);
+}
+
+async function api(path, body) {
+  const opts = body === undefined ? {} : {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  };
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(formatDetail(data.detail) || `Erro ${res.status}`);
+  return data;
+}
+
+async function command(path, body, okMsg) {
+  if (busy) return;
+  busy = true; render();
+  try {
+    status = await api(path, body);
+    if (okMsg) toast(okMsg);
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    busy = false; render();
+  }
+}
+
+const fmtCoord = (p) => `${p[0].toFixed(6)}, ${p[1].toFixed(6)}`;
+function fmtDist(m) { return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(2)} km`; }
+function fmtTime(s) {
+  s = Math.round(s);
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60), r = s % 60;
+  if (m < 60) return `${m} min ${r ? r + ' s' : ''}`.trim();
+  return `${Math.floor(m / 60)} h ${m % 60} min`;
+}
+function lengthOf(points) {
+  let d = 0;
+  for (let i = 1; i < points.length; i++) d += L.latLng(points[i - 1]).distanceTo(L.latLng(points[i]));
+  return d;
+}
+const speed = () => Number($('speedInput').value);
+
+// ---------- interação ----------
+function setMode(m) {
+  mode = m;
+  $('tabPoint').classList.toggle('active', m === 'point');
+  $('tabRoute').classList.toggle('active', m === 'route');
+  $('pointPane').classList.toggle('hidden', m !== 'point');
+  $('routePane').classList.toggle('hidden', m !== 'route');
+  render();
+}
+$('tabPoint').onclick = () => setMode('point');
+$('tabRoute').onclick = () => setMode('route');
+
+map.on('click', (e) => {
+  const p = [e.latlng.lat, e.latlng.lng];
+  if (mode === 'point') {
+    command('/api/location', { lat: p[0], lon: p[1] }, `iPhone em ${fmtCoord(p)}`);
+  } else {
+    waypoints.push(p);
+    renderDraft();
+  }
+});
+
+$('coordForm').onsubmit = (e) => {
+  e.preventDefault();
+  const m = $('coordInput').value.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
+  if (!m) { toast('Use o formato "latitude, longitude", ex.: -23.5505, -46.6333', true); return; }
+  const p = [Number(m[1]), Number(m[2])];
+  map.setView(p, Math.max(map.getZoom(), 16));
+  command('/api/location', { lat: p[0], lon: p[1] }, `iPhone em ${fmtCoord(p)}`);
+};
+
+$('undoBtn').onclick = () => { waypoints.pop(); renderDraft(); };
+$('resetBtn').onclick = () => { waypoints = []; renderDraft(); };
+
+$('speedChips').onclick = (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  $('speedInput').value = chip.dataset.speed;
+  renderDraft();
+};
+$('speedInput').oninput = renderDraft;
+
+$('playBtn').onclick = () => {
+  if (waypoints.length < 2 || !(speed() > 0)) return;
+  command('/api/route', { points: waypoints.map(([lat, lon]) => ({ lat, lon })), speed_kmh: speed() }, 'Rota iniciada');
+};
+$('stopBtn').onclick = () => command('/api/stop', {}, 'Rota parada; iPhone mantido no ponto atual');
+$('clearBtn').onclick = () => command('/api/clear', {}, 'iPhone de volta ao GPS real');
+$('currentText').onclick = () => { if (status?.current) map.setView(status.current, Math.max(map.getZoom(), 16)); };
+
+// ---------- renderização ----------
+function renderDraft() {
+  draftLine.setLatLngs(waypoints);
+  draftDots.clearLayers();
+  waypoints.forEach((p, i) => {
+    L.circleMarker(p, {
+      radius: i === 0 || i === waypoints.length - 1 ? 6 : 4, color: accent, weight: 2,
+      fillColor: i === 0 ? accent : '#fff', fillOpacity: 1,
+    }).addTo(draftDots);
+  });
+  const d = lengthOf(waypoints);
+  $('distStat').textContent = fmtDist(d);
+  $('timeStat').textContent = speed() > 0 ? fmtTime(d / (speed() / 3.6)) : '—';
+  [...$('speedChips').children].forEach((c) => c.classList.toggle('active', Number(c.dataset.speed) === speed()));
+  render();
+}
+
+function render() {
+  const s = status;
+  const dot = $('dot');
+  if (!s) {
+    dot.className = 'dot warn';
+    $('deviceText').textContent = 'Servidor sem resposta';
+  } else if (s.connected && s.device) {
+    dot.className = 'dot ok';
+    $('deviceText').textContent = `${s.device.name ?? 'iPhone'} · iOS ${s.device.ios_version}`;
+  } else if (s.connecting) {
+    dot.className = 'dot warn';
+    $('deviceText').textContent = 'Conectando ao iPhone…';
+  } else {
+    dot.className = 'dot err';
+    $('deviceText').textContent = s.error || 'iPhone desconectado';
+  }
+
+  const running = s?.mode === 'route';
+  $('playBtn').disabled = busy || waypoints.length < 2 || !(speed() > 0);
+  $('stopBtn').disabled = busy || !running;
+  $('clearBtn').disabled = busy;
+  $('playBtn').textContent = running ? 'Reiniciar rota' : 'Iniciar rota';
+
+  if (s?.current) {
+    currentMarker.setLatLng(s.current);
+    if (!map.hasLayer(currentMarker)) currentMarker.addTo(map);
+    $('currentText').textContent = fmtCoord(s.current) + (running ? '  (em movimento)' : '');
+    if (!centeredOnce) { map.setView(s.current, 16); centeredOnce = true; }
+  } else {
+    if (map.hasLayer(currentMarker)) currentMarker.remove();
+    $('currentText').textContent = 'Nenhuma (GPS real)';
+  }
+
+  activeLine.setLatLngs(running && s.route ? s.route : []);
+  const showProgress = running && s.progress;
+  $('progressWrap').classList.toggle('hidden', !showProgress);
+  if (showProgress) {
+    const { done, total } = s.progress;
+    $('progressBar').style.width = `${(100 * done) / total}%`;
+    const left = (total - done) * s.interval_s;
+    $('progressText').textContent = `${done} de ${total} pontos · faltam ${fmtTime(left)}`;
+  }
+}
+
+async function poll() {
+  try {
+    status = await api('/api/status');
+  } catch {
+    status = null;
+  }
+  if (!busy) render();
+  setTimeout(poll, 1000);
+}
+
+renderDraft();
+poll();
+</script>
+</body>
+</html>
